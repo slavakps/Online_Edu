@@ -20,7 +20,6 @@ class Lesson(models.Model):
     preview = models.ImageField(upload_to='lessons/', blank=True, null=True, verbose_name='Превью')
     video_url = models.URLField(blank=True, verbose_name='Ссылка на видео')
 
-    # Связь с курсом (один ко многим)
     course = models.ForeignKey(
         Course,
         on_delete=models.CASCADE,
