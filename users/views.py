@@ -1,3 +1,22 @@
+from django_filters.rest_framework import DjangoFilterBackend
 from django.shortcuts import render
+from rest_framework.decorators import permission_classes
 
-# Create your views here.
+from .models import Payment, User
+from rest_framework import viewsets, filters, permissions
+from materials.serializers import PaymentSerializer
+from .serializers import UserSerializer
+
+
+class PaymentViewSet(viewsets.ModelViewSet):
+    queryset = Payment.objects.all()
+    serializer_class = PaymentSerializer
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
+    filterset_fields = ['paid_course', 'paid_lesson', 'payment_method']
+    ordering_fields = ['payment_date']
+
+class UserViewSet(viewsets.ModelViewSet):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
