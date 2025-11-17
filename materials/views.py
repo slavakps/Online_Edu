@@ -16,7 +16,7 @@ class CourseViewSet(viewsets.ModelViewSet):
 
     def get_permissions(self):
         if self.action in ['create']:
-            permission_classes = [permissions.IsAuthenticated]  # Создавать могут все авторизованные
+            permission_classes = [permissions.IsAuthenticated, ~IsModerator]
         elif self.action in ['destroy']:
             permission_classes = [IsSuperUser]  # Удалять только админы
         else:
@@ -48,7 +48,7 @@ class SubscriptionAPIView(APIView):
 class LessonListAPIView(generics.ListAPIView):
     queryset = Lesson.objects.all()
     serializer_class = LessonSerializer
-    permission_classes = [permissions.IsAuthenticated, IsModerator | IsOwner | IsSuperUser]
+    permission_classes = [permissions.IsAuthenticated]
     pagination_class = MaterialsPaginator
 
 
@@ -60,7 +60,7 @@ class LessonRetrieveAPIView(generics.RetrieveAPIView):
 
 class LessonCreateAPIView(generics.CreateAPIView):
     serializer_class = LessonSerializer
-    permission_classes = [permissions.IsAuthenticated]  # Создавать могут все авторизованные
+    permission_classes = [permissions.IsAuthenticated, ~IsModerator]  # Создавать могут все авторизованные
 
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user)
