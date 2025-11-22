@@ -64,8 +64,7 @@ class SubscriptionTestCase(APITestCase):
         """Тест создания подписки"""
         self.client.force_authenticate(user=self.user)
 
-        data = {'course_id': self.course.id}
-        response = self.client.post('/api/materials/subscription/', data)
+        response = self.client.post(f'/api/materials/courses/{self.course.id}/subscribe/')
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(Subscription.objects.count(), 1)
@@ -75,12 +74,9 @@ class SubscriptionTestCase(APITestCase):
         """Тест удаления подписки"""
         self.client.force_authenticate(user=self.user)
 
-        # Сначала создаём подписку
         Subscription.objects.create(user=self.user, course=self.course)
 
-        # Потом удаляем её
-        data = {'course_id': self.course.id}
-        response = self.client.post('/api/materials/subscription/', data)
+        response = self.client.post(f'/api/materials/courses/{self.course.id}/subscribe/')
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(Subscription.objects.count(), 0)

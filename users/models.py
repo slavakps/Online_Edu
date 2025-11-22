@@ -42,11 +42,20 @@ class User(AbstractUser):
     def __str__(self):
         return self.email
 
+
 class Payment(models.Model):
     PAYMENT_METHODS = [
         ('cash', 'Наличные'),
         ('transfer', 'Перевод на счет'),
+        ('stripe', 'Stripe'),
     ]
+
+    STATUS_CHOICES = [
+        ('pending', 'Ожидает оплаты'),
+        ('paid', 'Оплачено'),
+        ('canceled', 'Отменено'),
+    ]
+
     user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name='Пользователь')
     payment_date = models.DateTimeField(auto_now_add=True, verbose_name='Дата оплаты')
     paid_course = models.ForeignKey('materials.Course', on_delete=models.CASCADE, null=True, blank=True,
@@ -54,7 +63,15 @@ class Payment(models.Model):
     paid_lesson = models.ForeignKey('materials.Lesson', on_delete=models.CASCADE, null=True, blank=True,
                                     verbose_name='Оплаченный урок')
     amount = models.DecimalField(max_digits=10, decimal_places=2, verbose_name='Сумма оплаты')
-    payment_method = models.CharField(max_length=10, choices=PAYMENT_METHODS, verbose_name='Способ оплаты')
+    payment_method = models.CharField(max_length=10, choices=PAYMENT_METHODS, default='stripe',
+                                      verbose_name='Способ оплаты')
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending', verbose_name='Статус оплаты')
+
+    # Поля для Stripe
+    stripe_product_id = models.CharField(max_length=100, blank=True, verbose_name='ID продукта в Stripe')
+    stripe_price_id = models.CharField(max_length=100, blank=True, verbose_name='ID цены в Stripe')
+    stripe_session_id = models.CharField(max_length=100, blank=True, verbose_name='ID сессии в Stripe')
+    stripe_payment_url = models.URLField(max_length=500, blank=True, verbose_name='Ссылка для оплаты Stripe')
 
     class Meta:
         verbose_name = 'Платеж'

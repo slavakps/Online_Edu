@@ -1,12 +1,14 @@
 from rest_framework import viewsets, generics, permissions, status
-from rest_framework.decorators import permission_classes
 from .models import Course, Lesson, Subscription
+from users.models import Payment
+from .stripe_service import create_product, create_price, create_checkout_session
 from .serializers import CourseSerializer, LessonSerializer
 from .permissions import IsSuperUser, IsModerator, IsOwner
 from rest_framework.views import APIView
 from django.shortcuts import get_object_or_404
 from rest_framework.response import Response
 from .paginators import MaterialsPaginator
+
 
 
 class CourseViewSet(viewsets.ModelViewSet):
@@ -18,7 +20,9 @@ class CourseViewSet(viewsets.ModelViewSet):
         if self.action in ['create']:
             permission_classes = [permissions.IsAuthenticated, ~IsModerator]
         elif self.action in ['destroy']:
-            permission_classes = [IsSuperUser]  # Удалять только админы
+            permission_classes = [IsSuperUser | IsOwner]
+        elif self.action == ['list']:
+            permission_classes = [permissions.IsAuthenticated]
         else:
             permission_classes = [permissions.IsAuthenticated, IsModerator | IsOwner | IsSuperUser]
         return [permission() for permission in permission_classes]
@@ -28,9 +32,8 @@ class CourseViewSet(viewsets.ModelViewSet):
 
 
 class SubscriptionAPIView(APIView):
-    def post(self, request, *args, **kwargs):
+    def post(self, request, course_id, *args, **kwargs):
         user = request.user
-        course_id = request.data.get('course_id')
         course = get_object_or_404(Course, id=course_id)
 
         subscription = Subscription.objects.filter(user=user, course=course)
@@ -76,3 +79,40 @@ class LessonDestroyAPIView(generics.DestroyAPIView):
     queryset = Lesson.objects.all()
     serializer_class = LessonSerializer
     permission_classes = [permissions.IsAuthenticated, IsOwner | IsSuperUser]
+
+
+class CoursePaymentView(APIView):
+    def post(self, request):
+        course_id = request.data.get('course_id')
+        course = Course.objects.get(id=course_id)
+        product = create_product(course.title, course.description)
+
+        if product is None:
+            return Response({"error": "Не удалось создать продукт в Stripe"}, status=400)
+
+        price = create_price(product.id, course.price)
+        if price is None:
+            return Response({"error": "Не удалось создать цену в Stripe"}, status=400)
+
+        session = create_checkout_session(
+            price_id=price.id,
+            success_url='https://example.com/success',
+            cancel_url='https://example.com/cancel'
+        )
+        if session is None:
+            return Response({"error": "Не удалось создать сессию оплаты"}, status=400)
+
+        payment = Payment.objects.create(
+            user=request.user,
+            paid_course=course,
+            amount=course.price,
+            payment_method='stripe',
+            stripe_product_id=product.id,
+            stripe_price_id=price.id,
+            stripe_session_id=session.id,
+            stripe_payment_url=session.url
+        )
+
+        return Response({
+            "payment_url": session.url
+        })
