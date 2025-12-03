@@ -1,6 +1,4 @@
 from django_filters.rest_framework import DjangoFilterBackend
-from django.shortcuts import render
-from rest_framework.decorators import permission_classes
 from .models import Payment, User
 from rest_framework import viewsets, filters, permissions, generics
 from materials.serializers import PaymentSerializer

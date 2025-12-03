@@ -8,6 +8,7 @@ from rest_framework.views import APIView
 from django.shortcuts import get_object_or_404
 from rest_framework.response import Response
 from .paginators import MaterialsPaginator
+from .tasks import send_course_update_notification
 
 
 
@@ -29,6 +30,14 @@ class CourseViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user)
+
+    def perform_update(self, serializer):
+        """Сохраняет обновленный курс и отправляет уведомления подписчикам"""
+        # Сохраняем обновленный курс
+        course = serializer.save()
+
+        # Асинхронно отправляем уведомления подписчикам
+        send_course_update_notification.delay(course.id)
 
 
 class SubscriptionAPIView(APIView):

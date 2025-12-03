@@ -1,7 +1,9 @@
 import os
 from pathlib import Path
+from celery.schedules import crontab
 from dotenv import load_dotenv
 from datetime import timedelta
+
 
 load_dotenv()
 
@@ -36,6 +38,7 @@ INSTALLED_APPS = [
     'django_filters',
     'rest_framework_simplejwt',
     'drf_yasg',
+    'django_celery_beat',
 ]
 
 REST_FRAMEWORK = {
@@ -151,3 +154,27 @@ AUTH_USER_MODEL = 'users.User'
 # Stripe settings
 STRIPE_PUBLISHABLE_KEY = os.getenv('STRIPE_PUBLISHABLE_KEY', '')
 STRIPE_SECRET_KEY = os.getenv('STRIPE_SECRET_KEY', '')
+
+# URL-адрес брокера сообщений
+CELERY_BROKER_URL = 'redis://localhost:6379' # Например, Redis, который по умолчанию работает на порту 6379
+
+# URL-адрес брокера результатов, также Redis
+CELERY_RESULT_BACKEND = 'redis://localhost:6379'
+
+# Часовой пояс для работы Celery
+CELERY_TIMEZONE = "UTC"
+
+# Флаг отслеживания выполнения задач
+CELERY_TASK_TRACK_STARTED = True
+
+# Максимальное время на выполнение задачи
+CELERY_BEAT_SCHEDULE = {
+    'send-course-updates': {
+        'task': 'materials.tasks.send_course_update_notification',
+        'schedule': crontab(hour=9, minute=0),  # Каждый день в 9:00
+    },
+    'block-inactive-users': {
+        'task': 'materials.tasks.block_inactive_users',
+        'schedule': crontab(day_of_month='1', hour=0, minute=0),  # 1-го числа месяца
+    },
+}
