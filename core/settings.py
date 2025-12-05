@@ -169,12 +169,10 @@ CELERY_TASK_TRACK_STARTED = True
 
 # Максимальное время на выполнение задачи
 CELERY_BEAT_SCHEDULE = {
-    'send-course-updates': {
-        'task': 'materials.tasks.send_course_update_notification',
-        'schedule': crontab(hour=9, minute=0),  # Каждый день в 9:00
-    },
     'block-inactive-users': {
         'task': 'materials.tasks.block_inactive_users',
         'schedule': crontab(day_of_month='1', hour=0, minute=0),  # 1-го числа месяца
     },
 }
+
+EMAIL_HOST_USER = "info@myplatform.com"
