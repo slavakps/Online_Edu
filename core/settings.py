@@ -175,4 +175,9 @@ CELERY_BEAT_SCHEDULE = {
     },
 }
 
-EMAIL_HOST_USER = "info@myplatform.com"
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_USE_SSL = False
+EMAIL_HOST_USER = 'your@gmail.com'
+EMAIL_HOST_PASSWORD = 'app_password'
