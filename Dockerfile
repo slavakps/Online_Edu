@@ -1,5 +1,8 @@
-FROM python:3.11-slim
+FROM python:3.13-slim
 WORKDIR /app
+RUN apt-get update && \
+    apt-get install gcc libpq-dev python3-dev -y --no-install-recommends && \
+    apt-get clean
 COPY requirements.txt .
 RUN pip install -r requirements.txt
 COPY . .

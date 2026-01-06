@@ -1,0 +1,11 @@
+.env
+.env.example
+.git
+.gitignore
+.idea
+.pytest_cache
+README.md
+__pycache__
+htmlcov
+null
+venv

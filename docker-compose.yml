@@ -1,53 +1,74 @@
-version: '3.8'
+
 services:
   postgres-db:
-    image: postgres:15
+    image: postgres:15-alpine
     environment:
-      POSTGRES_DB: online_edu
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: pg_isready -U ${DB_USER} -d ${DB_NAME}
+      interval: 3s
+      retries: 10
+      timeout: 3s
 
   redis-broker:
-    image: redis:alpine
+    image: redis:8-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: redis-cli ping
+      interval: 3s
+      retries: 10
+      timeout: 3s
 
   django-backend:
     build: .
+    command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
     ports:
       - "8000:8000"
+    env_file: .env
     environment:
       DB_HOST: postgres-db
-      DB_NAME: online_edu
-      DB_USER: postgres
-      DB_PASSWORD: password
-      REDIS_URL: redis://redis-broker:6379/0
+      DB_PORT: "5432"
+      REDIS_HOST: redis-broker
+      REDIS_PORT: "6379"
     depends_on:
       - postgres-db
       - redis-broker
 
-  celery-worker:
+  celery_worker:
     build: .
     command: celery -A core worker -l info
+    env_file: .env
     environment:
       DB_HOST: postgres-db
-      DB_NAME: online_edu
-      DB_USER: postgres
-      DB_PASSWORD: password
-      REDIS_URL: redis://redis-broker:6379/0
+      DB_PORT: "5432"
+      REDIS_HOST: redis-broker
+      REDIS_PORT: "6379"
     depends_on:
       - postgres-db
       - redis-broker
       - django-backend
 
-  celery-beat:
+  celery_beat:
     build: .
     command: celery -A core beat -l info
+    env_file: .env
     environment:
       DB_HOST: postgres-db
-      DB_NAME: online_edu
-      DB_USER: postgres
-      DB_PASSWORD: password
-      REDIS_URL: redis://redis-broker:6379/0
+      DB_PORT: "5432"
+      REDIS_HOST: redis-broker
+      REDIS_PORT: "6379"
     depends_on:
       - postgres-db
       - redis-broker
       - django-backend
+
+
+volumes:
+  pg_data:
